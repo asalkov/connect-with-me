@@ -1,0 +1,28 @@
+{
+  "name": "chat-application",
+  "version": "1.0.0",
+  "description": "Real-time chat application with NestJS and React",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build:all": "cd backend && npm run build && cd ../frontend && npm run build",
+    "test:all": "cd backend && npm test && cd ../frontend && npm test",
+    "lint:all": "cd backend && npm run lint && cd ../frontend && npm run lint",
+    "format:all": "cd backend && npm run format && cd ../frontend && npm run format"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "keywords": [
+    "chat",
+    "nestjs",
+    "react",
+    "websocket",
+    "real-time"
+  ],
+  "author": "Chat App Team",
+  "license": "UNLICENSED"
+}
