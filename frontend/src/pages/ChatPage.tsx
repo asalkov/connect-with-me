@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { Box, Typography, Paper, Avatar, Chip } from '@mui/material';
 import { MainLayout } from '../components/layout';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { getProfile } from '../store/slices/authSlice';
+import { useAppSelector } from '../store/hooks';
 
 export const ChatPage = () => {
   //const dispatch = useAppDispatch();

@@ -1,0 +1,21 @@
+# Terraform Variables for Serverless Stack (Without Custom Domain)
+# Copy this file to terraform.tfvars and update with your values
+
+aws_region  = "us-east-1"
+environment = "prod"
+
+# Application Configuration
+frontend_url = "*"  # Will be updated after deployment with CloudFront URL
+
+# Secrets (CHANGE THESE!)
+jwt_secret         = "your-super-secret-jwt-key-change-this-in-production"
+jwt_refresh_secret = "your-super-secret-refresh-key-change-this-in-production"
+
+# Lambda Configuration (optional, defaults are fine)
+lambda_memory_size = 512   # MB (128-10240)
+lambda_timeout     = 30    # seconds (1-900)
+
+# Note: Domain variables are optional and default to empty strings
+# If you leave them empty, you'll get AWS default URLs:
+# - Frontend: https://d111111abcdef8.cloudfront.net
+# - API: https://abcd1234.execute-api.us-east-1.amazonaws.com

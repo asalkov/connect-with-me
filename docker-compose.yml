@@ -1,6 +1,32 @@
 version: '3.8'
 
 services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    volumes:
+      - ./dynamodb-data:/data
+    networks:
+      - chat-network
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+    depends_on:
+      - dynamodb-local
+    networks:
+      - chat-network
+
   backend:
     build:
       context: ./backend
@@ -14,6 +40,15 @@ services:
       - PORT=3000
       - WEBSOCKET_PORT=3001
       - FRONTEND_URL=http://localhost:5173
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - DYNAMODB_USERS_TABLE=chat-users-dev
+      - DYNAMODB_MESSAGES_TABLE=chat-messages-dev
+      - DYNAMODB_CONVERSATIONS_TABLE=chat-conversations-dev
+    depends_on:
+      - dynamodb-local
     volumes:
       - ./backend:/app
       - /app/node_modules

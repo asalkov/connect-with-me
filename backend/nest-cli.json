@@ -4,6 +4,20 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "webpack": true
+    "webpack": true,
+    "assets": ["**/*.ts"],
+    "watchAssets": true
+  },
+  "entryFile": "main",
+  "projects": {
+    "lambda": {
+      "type": "application",
+      "root": "src",
+      "entryFile": "lambda",
+      "sourceRoot": "src",
+      "compilerOptions": {
+        "tsConfigPath": "tsconfig.json"
+      }
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { User, UserStatus } from '../../entities/user.entity';
 import { Conversation, ConversationType } from '../../entities/conversation.entity';
 import { Message, MessageType, MessageStatus } from '../../entities/message.entity';
