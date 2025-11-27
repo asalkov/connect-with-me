@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,9 +15,9 @@ export class ConversationsService {
 
   constructor(
     private configService: ConfigService,
-    @InjectRepository(Conversation)
+    @Optional() @InjectRepository(Conversation)
     private typeormConversationRepository: Repository<Conversation>,
-    @InjectRepository(User)
+    @Optional() @InjectRepository(User)
     private typeormUserRepository: Repository<User>,
     private dynamoDBService: DynamoDBService,
   ) {
@@ -25,8 +25,10 @@ export class ConversationsService {
     const useDynamoDB = this.configService.get('DYNAMODB_CONVERSATIONS_TABLE');
     
     if (useDynamoDB) {
+      console.log('Using DynamoDB Conversation Repository');
       this.conversationRepository = new DynamoDBConversationRepository(this.dynamoDBService);
     } else {
+      console.log('Using TypeORM Conversation Repository');
       this.conversationRepository = new TypeORMConversationRepository(
         this.typeormConversationRepository,
         this.typeormUserRepository,

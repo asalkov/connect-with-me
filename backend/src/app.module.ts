@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { MessagesModule } from './messages/messages.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({})
@@ -25,8 +26,8 @@ export class AppModule {
 
     const providers: any[] = [AppService];
 
-    // Always load Auth, Users, and Conversations modules (they now support both TypeORM and DynamoDB)
-    imports.push(AuthModule, UsersModule.forRoot(), ConversationsModule);
+    // Always load Auth, Users, Conversations, and Messages modules (they now support both TypeORM and DynamoDB)
+    imports.push(AuthModule, UsersModule.forRoot(), ConversationsModule.forRoot(), MessagesModule.forRoot());
     providers.push({
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
