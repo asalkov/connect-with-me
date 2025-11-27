@@ -9,6 +9,7 @@ import express, { Express } from 'express';
 import { Context, APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { createServer, proxy, Response } from 'aws-serverless-express';
 import { Server } from 'http';
+import { CorsExceptionFilter } from './filters/cors-exception.filter';
 
 let cachedServer: Server;
 
@@ -21,11 +22,11 @@ async function bootstrapServer(): Promise<Server> {
       logger: ['error', 'warn', 'log'],
     });
 
-    // Enable CORS
-    app.enableCors({
-      origin: process.env.FRONTEND_URL || '*',
-      credentials: true,
-    });
+    // CORS is handled at the Lambda level, not by NestJS
+    // This prevents conflicts with our manual CORS headers
+
+    // Add global exception filter to ensure CORS headers on all errors
+    app.useGlobalFilters(new CorsExceptionFilter());
 
     // Enable validation
     app.useGlobalPipes(
@@ -54,9 +55,13 @@ function convertV2ToV1Event(event: any): APIGatewayProxyEvent {
   }
 
   // Convert v2 to v1
+  const rawPath = event.rawPath || event.path || '/';
+  // Remove any spaces or encode the path properly
+  const cleanPath = rawPath.replace(/ /g, '');
+  
   const v1Event: any = {
     httpMethod: event.requestContext?.http?.method || event.httpMethod,
-    path: event.rawPath || event.path || '/',
+    path: cleanPath,
     queryStringParameters: event.queryStringParameters || null,
     headers: event.headers || {},
     body: event.body || null,
@@ -66,7 +71,7 @@ function convertV2ToV1Event(event: any): APIGatewayProxyEvent {
       apiId: event.requestContext?.apiId || '',
       protocol: event.requestContext?.http?.protocol || 'HTTP/1.1',
       httpMethod: event.requestContext?.http?.method || event.httpMethod,
-      path: event.rawPath || event.path || '/',
+      path: cleanPath,
       stage: event.requestContext?.stage || '$default',
       requestId: event.requestContext?.requestId || '',
       requestTime: event.requestContext?.time || '',
@@ -92,6 +97,25 @@ export const handler = async (
   try {
     console.log('Received event:', JSON.stringify(event, null, 2));
     
+    // Handle OPTIONS requests for CORS preflight
+    const httpMethod = (event as any).requestContext?.http?.method || (event as any).httpMethod;
+    if (httpMethod === 'OPTIONS') {
+      console.log('Handling OPTIONS preflight request');
+      const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
+      return {
+        statusCode: 200,
+        headers: {
+          'access-control-allow-origin': origin,
+          'access-control-allow-credentials': 'true',
+          'access-control-allow-methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+          'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with',
+          'access-control-max-age': '86400',
+          'vary': 'Origin',
+        },
+        body: '',
+      };
+    }
+    
     const server = await bootstrapServer();
     
     // Convert v2 event to v1 format if needed
@@ -105,9 +129,23 @@ export const handler = async (
       response
         .then((res) => {
           console.log('Response:', res.statusCode);
+          
+          // Ensure CORS headers are present in all responses
+          const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
+          const corsHeaders = {
+            'access-control-allow-origin': origin,
+            'access-control-allow-credentials': 'true',
+            'access-control-allow-methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+            'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with',
+            'vary': 'Origin',
+          };
+          
           resolve({
             statusCode: res.statusCode,
-            headers: res.headers,
+            headers: {
+              ...res.headers,
+              ...corsHeaders,
+            },
             body: res.body,
             isBase64Encoded: res.isBase64Encoded,
           });
@@ -119,10 +157,16 @@ export const handler = async (
     });
   } catch (error) {
     console.error('Lambda handler error:', error);
+    const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
     return {
       statusCode: 500,
       headers: {
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
+        'access-control-allow-origin': origin,
+        'access-control-allow-credentials': 'true',
+        'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
+        'access-control-allow-headers': 'Content-Type,Authorization',
+        'vary': 'Origin',
       },
       body: JSON.stringify({
         message: 'Internal server error',

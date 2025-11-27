@@ -6,12 +6,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, UserStatus } from '../entities/user.entity';
 import { RegisterDto, LoginDto } from './dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { UsersService } from '../users/users.service';
 
 export interface AuthResponse {
   user: {
@@ -29,8 +28,7 @@ export interface AuthResponse {
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -39,34 +37,28 @@ export class AuthService {
     const { email, username, password, firstName, lastName } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
-      where: [{ email }, { username }],
-    });
+    const existingEmail = await this.usersService.findByEmail(email);
+    if (existingEmail) {
+      throw new ConflictException('Email already registered');
+    }
 
-    if (existingUser) {
-      if (existingUser.email === email) {
-        throw new ConflictException('Email already registered');
-      }
-      if (existingUser.username === username) {
-        throw new ConflictException('Username already taken');
-      }
+    const existingUsername = await this.usersService.findByUsername(username);
+    if (existingUsername) {
+      throw new ConflictException('Username already taken');
     }
 
     // Hash password
     const hashedPassword = await this.hashPassword(password);
 
     // Create user
-    const user = this.userRepository.create({
+    const savedUser = await this.usersService.create({
       email,
       username,
       password: hashedPassword,
       firstName,
       lastName,
       status: UserStatus.OFFLINE,
-      isActive: true,
     });
-
-    const savedUser = await this.userRepository.save(user);
 
     // Generate tokens
     const tokens = await this.generateTokens(savedUser);
@@ -81,9 +73,10 @@ export class AuthService {
     const { emailOrUsername, password } = loginDto;
 
     // Find user by email or username
-    const user = await this.userRepository.findOne({
-      where: [{ email: emailOrUsername }, { username: emailOrUsername }],
-    });
+    let user = await this.usersService.findByEmail(emailOrUsername);
+    if (!user) {
+      user = await this.usersService.findByUsername(emailOrUsername);
+    }
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -101,10 +94,9 @@ export class AuthService {
       throw new UnauthorizedException('Account is deactivated');
     }
 
-    // Update last seen
-    user.lastSeenAt = new Date();
-    user.status = UserStatus.ONLINE;
-    await this.userRepository.save(user);
+    // Update last seen and status
+    await this.usersService.updateStatus(user.id, UserStatus.ONLINE);
+    await this.usersService.updateLastSeen(user.id);
 
     // Generate tokens
     const tokens = await this.generateTokens(user);
@@ -116,9 +108,10 @@ export class AuthService {
   }
 
   async validateUser(emailOrUsername: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({
-      where: [{ email: emailOrUsername }, { username: emailOrUsername }],
-    });
+    let user = await this.usersService.findByEmail(emailOrUsername);
+    if (!user) {
+      user = await this.usersService.findByUsername(emailOrUsername);
+    }
 
     if (!user) {
       return null;
@@ -143,11 +136,9 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const user = await this.userRepository.findOne({
-        where: { id: payload.sub, isActive: true },
-      });
+      const user = await this.usersService.findById(payload.sub);
 
-      if (!user) {
+      if (!user || !user.isActive) {
         throw new UnauthorizedException('User not found');
       }
 
@@ -163,21 +154,18 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.usersService.findById(userId);
 
     if (user) {
-      user.status = UserStatus.OFFLINE;
-      user.lastSeenAt = new Date();
-      await this.userRepository.save(user);
+      await this.usersService.updateStatus(userId, UserStatus.OFFLINE);
+      await this.usersService.updateLastSeen(userId);
     }
   }
 
   async getProfile(userId: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId, isActive: true },
-    });
+    const user = await this.usersService.findById(userId);
 
-    if (!user) {
+    if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found');
     }
 

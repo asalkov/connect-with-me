@@ -24,15 +24,12 @@ export class AppModule {
 
     const providers: any[] = [AppService];
 
-    // Only load Auth and Users modules in development
-    // In production, these require DynamoDB repositories which aren't implemented yet
-    if (!isProduction || !useDynamoDB) {
-      imports.push(AuthModule, UsersModule);
-      providers.push({
-        provide: APP_GUARD,
-        useClass: JwtAuthGuard,
-      });
-    }
+    // Always load Auth and Users modules (they now support both TypeORM and DynamoDB)
+    imports.push(AuthModule, UsersModule.forRoot());
+    providers.push({
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    });
 
     return {
       module: AppModule,
