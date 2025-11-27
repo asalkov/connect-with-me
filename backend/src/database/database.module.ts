@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../entities/user.entity';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
+import { DynamoDBModule } from './dynamodb';
 
 @Module({})
 export class DatabaseModule {
@@ -11,17 +12,18 @@ export class DatabaseModule {
     const isProduction = process.env.NODE_ENV === 'production';
     const useDynamoDB = process.env.DYNAMODB_USERS_TABLE !== undefined;
 
-    // In production with DynamoDB, skip TypeORM entirely
-    // TODO: Implement proper DynamoDB repositories
+    // In production with DynamoDB, load DynamoDB module
     if (isProduction && useDynamoDB) {
+      console.log('🚀 Database Module: Loading DynamoDB for production');
       return {
         module: DatabaseModule,
-        imports: [],
-        exports: [],
+        imports: [DynamoDBModule],
+        exports: [DynamoDBModule],
       };
     }
 
     // For local development, use TypeORM with SQLite file
+    console.log('🚀 Database Module: Loading TypeORM for development');
     return {
       module: DatabaseModule,
       imports: [
