@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import {
   PutCommand,
   GetCommand,
-  UpdateCommand,
   DeleteCommand,
   QueryCommand,
   BatchWriteCommand,
+  UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
+import { BaseDynamoDBRepository } from '../../database/dynamodb/base-dynamodb.repository';
 import { Conversation, ConversationType } from '../types/conversation.types';
 import {
   IConversationRepository,
@@ -19,11 +20,9 @@ import {
 } from './conversation.repository.interface';
 
 @Injectable()
-export class DynamoDBConversationRepository implements IConversationRepository {
-  private tableName: string;
-
-  constructor(private dynamoDBService: DynamoDBService) {
-    this.tableName = this.dynamoDBService.getTableName('conversations');
+export class DynamoDBConversationRepository extends BaseDynamoDBRepository<Conversation> implements IConversationRepository {
+  constructor(dynamoDBService: DynamoDBService) {
+    super(dynamoDBService, 'conversations');
   }
 
   async create(conversationData: CreateConversationData): Promise<Conversation> {
@@ -172,44 +171,13 @@ export class DynamoDBConversationRepository implements IConversationRepository {
   }
 
   async update(id: string, conversationData: UpdateConversationData): Promise<Conversation> {
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    const key = {
+      PK: `CONVERSATION#${id}`,
+      SK: 'METADATA',
+    };
 
-    // Build update expression dynamically
-    Object.entries(conversationData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updateExpressions.push(`#${key} = :${key}`);
-        expressionAttributeNames[`#${key}`] = key;
-        
-        // Handle Date objects
-        if (value instanceof Date) {
-          expressionAttributeValues[`:${key}`] = value.toISOString();
-        } else {
-          expressionAttributeValues[`:${key}`] = value;
-        }
-      }
-    });
-
-    // Always update updatedAt
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
-
-    const command = new UpdateCommand({
-      TableName: this.tableName,
-      Key: {
-        PK: `CONVERSATION#${id}`,
-        SK: 'METADATA',
-      },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
-
-    const result = await this.dynamoDBService.getDocClient().send(command);
-    return this.deserializeConversation(result.Attributes);
+    const result = await this.executeUpdate(key, conversationData);
+    return this.deserializeConversation(result);
   }
 
   async delete(id: string): Promise<void> {

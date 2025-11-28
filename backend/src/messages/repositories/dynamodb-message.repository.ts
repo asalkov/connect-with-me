@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import {
   PutCommand,
   GetCommand,
-  UpdateCommand,
   DeleteCommand,
   QueryCommand,
   BatchWriteCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
+import { BaseDynamoDBRepository } from '../../database/dynamodb/base-dynamodb.repository';
 import { Message, MessageType, MessageStatus } from '../types/message.types';
 import {
   IMessageRepository,
@@ -19,11 +19,9 @@ import {
 } from './message.repository.interface';
 
 @Injectable()
-export class DynamoDBMessageRepository implements IMessageRepository {
-  private tableName: string;
-
-  constructor(private dynamoDBService: DynamoDBService) {
-    this.tableName = this.dynamoDBService.getTableName('messages');
+export class DynamoDBMessageRepository extends BaseDynamoDBRepository<Message> implements IMessageRepository {
+  constructor(dynamoDBService: DynamoDBService) {
+    super(dynamoDBService, 'messages');
   }
 
   async create(messageData: CreateMessageData): Promise<Message> {
@@ -133,44 +131,13 @@ export class DynamoDBMessageRepository implements IMessageRepository {
       throw new Error(`Message with ID ${id} not found`);
     }
 
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
+    const key = {
+      PK: `CONVERSATION#${existingMessage.conversationId}`,
+      SK: `MESSAGE#${existingMessage.createdAt}#${existingMessage.id}`,
+    };
 
-    // Build update expression dynamically
-    Object.entries(messageData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updateExpressions.push(`#${key} = :${key}`);
-        expressionAttributeNames[`#${key}`] = key;
-        
-        // Handle Date objects
-        if (value instanceof Date) {
-          expressionAttributeValues[`:${key}`] = value.toISOString();
-        } else {
-          expressionAttributeValues[`:${key}`] = value;
-        }
-      }
-    });
-
-    // Always update updatedAt
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
-
-    const command = new UpdateCommand({
-      TableName: this.tableName,
-      Key: {
-        PK: `CONVERSATION#${existingMessage.conversationId}`,
-        SK: `MESSAGE#${existingMessage.createdAt}#${existingMessage.id}`,
-      },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
-
-    const result = await this.dynamoDBService.getDocClient().send(command);
-    return this.deserializeMessage(result.Attributes);
+    const result = await this.executeUpdate(key, messageData);
+    return this.deserializeMessage(result);
   }
 
   async delete(id: string): Promise<void> {

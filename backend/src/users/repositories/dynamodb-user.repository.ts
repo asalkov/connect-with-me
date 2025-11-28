@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import {
   PutCommand,
   GetCommand,
-  UpdateCommand,
   DeleteCommand,
   QueryCommand,
   ScanCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
+import { BaseDynamoDBRepository } from '../../database/dynamodb/base-dynamodb.repository';
 import { User, UserStatus } from '../../types/user.types';
 import {
   IUserRepository,
@@ -19,11 +19,9 @@ import {
 } from './user.repository.interface';
 
 @Injectable()
-export class DynamoDBUserRepository implements IUserRepository {
-  private tableName: string;
-
-  constructor(private dynamoDBService: DynamoDBService) {
-    this.tableName = this.dynamoDBService.getTableName('users');
+export class DynamoDBUserRepository extends BaseDynamoDBRepository<User> implements IUserRepository {
+  constructor(dynamoDBService: DynamoDBService) {
+    super(dynamoDBService, 'users');
   }
 
   async create(userData: CreateUserData): Promise<User> {
@@ -57,10 +55,10 @@ export class DynamoDBUserRepository implements IUserRepository {
 
     try {
       await this.dynamoDBService.getDocClient().send(command);
-      console.log(`✅ User created in DynamoDB: ${user.id}`);
+      this.logSuccess('User created', user.id);
       return user;
     } catch (error) {
-      console.error('❌ Error creating user in DynamoDB:', error);
+      this.logError('creating user', error);
       throw error;
     }
   }
@@ -78,11 +76,9 @@ export class DynamoDBUserRepository implements IUserRepository {
       const result = await this.dynamoDBService.getDocClient().send(command);
       if (!result.Item) return null;
       
-      // Remove PK/SK from response
-      const { PK, SK, ...user } = result.Item;
-      return user as User;
+      return this.cleanDynamoDBKeys(result.Item) as User;
     } catch (error) {
-      console.error(`❌ Error finding user by ID ${id}:`, error);
+      this.logError('finding user by ID', error, id);
       throw error;
     }
   }
@@ -102,10 +98,9 @@ export class DynamoDBUserRepository implements IUserRepository {
       const result = await this.dynamoDBService.getDocClient().send(command);
       if (!result.Items || result.Items.length === 0) return null;
       
-      const { PK, SK, ...user } = result.Items[0];
-      return user as User;
+      return this.cleanDynamoDBKeys(result.Items[0]) as User;
     } catch (error) {
-      console.error(`❌ Error finding user by email ${email}:`, error);
+      this.logError('finding user by email', error, email);
       throw error;
     }
   }
@@ -125,59 +120,25 @@ export class DynamoDBUserRepository implements IUserRepository {
       const result = await this.dynamoDBService.getDocClient().send(command);
       if (!result.Items || result.Items.length === 0) return null;
       
-      const { PK, SK, ...user } = result.Items[0];
-      return user as User;
+      return this.cleanDynamoDBKeys(result.Items[0]) as User;
     } catch (error) {
-      console.error(`❌ Error finding user by username ${username}:`, error);
+      this.logError('finding user by username', error, username);
       throw error;
     }
   }
 
   async update(id: string, userData: UpdateUserData): Promise<User> {
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    // Build update expression dynamically
-    Object.entries(userData).forEach(([key, value]) => {
-      if (value !== undefined) {
-        updateExpressions.push(`#${key} = :${key}`);
-        expressionAttributeNames[`#${key}`] = key;
-        expressionAttributeValues[`:${key}`] = value;
-      }
-    });
-
-    // Always update updatedAt
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date();
-
-    if (updateExpressions.length === 0) {
+    if (Object.keys(userData).length === 0) {
       // No updates to perform, just return the existing user
       return this.findById(id);
     }
 
-    const command = new UpdateCommand({
-      TableName: this.tableName,
-      Key: {
-        PK: `USER#${id}`,
-        SK: `USER#${id}`,
-      },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: 'ALL_NEW',
-    });
+    const key = {
+      PK: `USER#${id}`,
+      SK: `USER#${id}`,
+    };
 
-    try {
-      const result = await this.dynamoDBService.getDocClient().send(command);
-      console.log(`✅ User updated in DynamoDB: ${id}`);
-      const { PK, SK, ...user } = result.Attributes;
-      return user as User;
-    } catch (error) {
-      console.error(`❌ Error updating user ${id}:`, error);
-      throw error;
-    }
+    return this.executeUpdate(key, userData) as Promise<User>;
   }
 
   async delete(id: string): Promise<void> {
@@ -191,9 +152,9 @@ export class DynamoDBUserRepository implements IUserRepository {
 
     try {
       await this.dynamoDBService.getDocClient().send(command);
-      console.log(`✅ User deleted from DynamoDB: ${id}`);
+      this.logSuccess('User deleted', id);
     } catch (error) {
-      console.error(`❌ Error deleting user ${id}:`, error);
+      this.logError('deleting user', error, id);
       throw error;
     }
   }
@@ -218,7 +179,7 @@ export class DynamoDBUserRepository implements IUserRepository {
             : undefined,
         };
       } catch (error) {
-        console.error('❌ Error scanning users:', error);
+        this.logError('scanning users', error);
         throw error;
       }
     }
@@ -250,7 +211,7 @@ export class DynamoDBUserRepository implements IUserRepository {
           : undefined,
       };
     } catch (error) {
-      console.error(`❌ Error searching users with query "${query}":`, error);
+      this.logError('searching users', error, `query: ${query}`);
       throw error;
     }
   }

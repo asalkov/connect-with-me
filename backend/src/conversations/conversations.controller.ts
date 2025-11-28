@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { UsersService } from '../users/users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { User } from '../types/user.types';
 import { ConversationType } from './types/conversation.types';
 
 @Controller('conversations')
@@ -14,7 +16,7 @@ export class ConversationsController {
 
   @Post()
   async createConversation(
-    @Req() req,
+    @GetUser() user: User,
     @Body() body: {
       type: ConversationType;
       participantIds: string[];
@@ -22,21 +24,21 @@ export class ConversationsController {
       description?: string;
     },
   ) {
-    const conversation = await this.conversationsService.createConversation(req.user.id, body);
+    const conversation = await this.conversationsService.createConversation(user.id, body);
     return { conversation };
   }
 
   @Get()
-  async getConversations(@Req() req, @Query('limit') limit?: number) {
+  async getConversations(@GetUser() user: User, @Query('limit') limit?: number) {
     const conversations = await this.conversationsService.findUserConversations(
-      req.user.id,
+      user.id,
       limit ? parseInt(String(limit)) : undefined,
     );
 
     // Enrich conversations with participant details
     const enrichedConversations = await Promise.all(
       conversations.map(async (conversation) => {
-        const participantIds = await this.conversationsService.getParticipants(conversation.id, req.user.id);
+        const participantIds = await this.conversationsService.getParticipants(conversation.id, user.id);
         
         // Fetch user details for all participants
         const participants = await Promise.all(
@@ -61,7 +63,7 @@ export class ConversationsController {
         // For direct conversations, find the other user
         let otherUser = null;
         if (conversation.type === ConversationType.DIRECT) {
-          const otherParticipant = participants.find(p => p && p.id !== req.user.id);
+          const otherParticipant = participants.find(p => p && p.id !== user.id);
           otherUser = otherParticipant;
         }
 
@@ -77,14 +79,14 @@ export class ConversationsController {
   }
 
   @Get(':id')
-  async getConversation(@Req() req, @Param('id') id: string) {
-    const conversation = await this.conversationsService.findById(id, req.user.id);
+  async getConversation(@GetUser() user: User, @Param('id') id: string) {
+    const conversation = await this.conversationsService.findById(id, user.id);
     return { conversation };
   }
 
   @Put(':id')
   async updateConversation(
-    @Req() req,
+    @GetUser() user: User,
     @Param('id') id: string,
     @Body() body: {
       name?: string;
@@ -92,45 +94,45 @@ export class ConversationsController {
       avatarUrl?: string;
     },
   ) {
-    const conversation = await this.conversationsService.updateConversation(id, req.user.id, body);
+    const conversation = await this.conversationsService.updateConversation(id, user.id, body);
     return { conversation };
   }
 
   @Delete(':id')
-  async deleteConversation(@Req() req, @Param('id') id: string) {
-    await this.conversationsService.deleteConversation(id, req.user.id);
+  async deleteConversation(@GetUser() user: User, @Param('id') id: string) {
+    await this.conversationsService.deleteConversation(id, user.id);
     return { message: 'Conversation deleted successfully' };
   }
 
   @Post(':id/participants')
   async addParticipant(
-    @Req() req,
+    @GetUser() user: User,
     @Param('id') id: string,
     @Body() body: { userId: string },
   ) {
-    await this.conversationsService.addParticipant(id, req.user.id, body.userId);
+    await this.conversationsService.addParticipant(id, user.id, body.userId);
     return { message: 'Participant added successfully' };
   }
 
   @Delete(':id/participants/:userId')
   async removeParticipant(
-    @Req() req,
+    @GetUser() user: User,
     @Param('id') id: string,
     @Param('userId') userId: string,
   ) {
-    await this.conversationsService.removeParticipant(id, req.user.id, userId);
+    await this.conversationsService.removeParticipant(id, user.id, userId);
     return { message: 'Participant removed successfully' };
   }
 
   @Post(':id/leave')
-  async leaveConversation(@Req() req, @Param('id') id: string) {
-    await this.conversationsService.leaveConversation(id, req.user.id);
+  async leaveConversation(@GetUser() user: User, @Param('id') id: string) {
+    await this.conversationsService.leaveConversation(id, user.id);
     return { message: 'Left conversation successfully' };
   }
 
   @Get(':id/participants')
-  async getParticipants(@Req() req, @Param('id') id: string) {
-    const participants = await this.conversationsService.getParticipants(id, req.user.id);
+  async getParticipants(@GetUser() user: User, @Param('id') id: string) {
+    const participants = await this.conversationsService.getParticipants(id, user.id);
     return { participants };
   }
 }

@@ -7,11 +7,12 @@ import {
   Body,
   Param,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { User } from '../types/user.types';
 
 @Controller('messages')
 @UseGuards(JwtAuthGuard)
@@ -20,7 +21,7 @@ export class MessagesController {
 
   @Get(':conversationId')
   async getMessages(
-    @Req() req,
+    @GetUser() user: User,
     @Param('conversationId') conversationId: string,
     @Query('limit') limit?: number,
     @Query('cursor') cursor?: string,
@@ -35,7 +36,7 @@ export class MessagesController {
 
   @Post()
   async sendMessage(
-    @Req() req,
+    @GetUser() user: User,
     @Body() body: {
       conversationId: string;
       content: string;
@@ -47,7 +48,7 @@ export class MessagesController {
   ) {
     const message = await this.messagesService.create({
       conversationId: body.conversationId,
-      senderId: req.user.id,
+      senderId: user.id,
       content: body.content,
       fileUrl: body.fileUrl,
       fileName: body.fileName,
@@ -59,7 +60,7 @@ export class MessagesController {
 
   @Put(':id')
   async updateMessage(
-    @Req() req,
+    @GetUser() user: User,
     @Param('id') id: string,
     @Body() body: { content: string },
   ) {
@@ -71,25 +72,25 @@ export class MessagesController {
   }
 
   @Delete(':id')
-  async deleteMessage(@Req() req, @Param('id') id: string) {
+  async deleteMessage(@GetUser() user: User, @Param('id') id: string) {
     await this.messagesService.delete(id);
     return { message: 'Message deleted successfully' };
   }
 
   @Post(':id/read')
-  async markAsRead(@Req() req, @Param('id') id: string) {
-    await this.messagesService.markAsRead(id, req.user.id);
+  async markAsRead(@GetUser() user: User, @Param('id') id: string) {
+    await this.messagesService.markAsRead(id, user.id);
     return { message: 'Message marked as read' };
   }
 
   @Post(':conversationId/read-all')
   async markConversationAsRead(
-    @Req() req,
+    @GetUser() user: User,
     @Param('conversationId') conversationId: string,
   ) {
     await this.messagesService.markConversationAsRead(
       conversationId,
-      req.user.id,
+      user.id,
     );
     return { message: 'All messages marked as read' };
   }
