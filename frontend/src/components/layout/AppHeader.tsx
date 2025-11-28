@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
+import { ThemeToggle } from '../common';
 
 interface AppHeaderProps {
   drawerWidth: number;
@@ -127,6 +128,9 @@ export const AppHeader = ({ drawerWidth, onMenuClick, isMobile }: AppHeaderProps
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications */}
           <IconButton
             color="inherit"

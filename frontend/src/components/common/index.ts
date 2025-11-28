@@ -3,5 +3,8 @@ export { default as ToastContainer } from './ToastContainer';
 export { default as Skeleton } from './Skeleton';
 export { ConfirmDialog } from './ConfirmDialog';
 export { StatusIndicator } from './StatusIndicator';
+export { default as ThemeToggle } from './ThemeToggle';
+export { default as PageTransition } from './PageTransition';
+export { default as LazyLoad } from './LazyLoad';
 export type { UserStatus } from './StatusIndicator';
 export type { ConfirmDialogSeverity } from './ConfirmDialog';
