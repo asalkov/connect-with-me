@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { MainLayout } from '../components/layout';
+import { ChatLayout } from '../components/chat/ChatLayout';
 import { ConversationListView } from '../components/chat/ConversationListView';
 import { MessageView } from '../components/chat/MessageView';
 import { StartChatModal } from '../components/chat/StartChatModal';
@@ -12,6 +13,7 @@ import { messagesService } from '../services/messages.api';
 import { User as ApiUser } from '../types/user';
 import { getUserDisplayName, getUserInitials } from '../utils/userHelpers';
 import { RootState } from '../store';
+import { Box, Typography } from '@mui/material';
 
 export const ChatPage = () => {
   const currentUser = useSelector((state: RootState) => state.auth.user);
@@ -109,32 +111,52 @@ export const ChatPage = () => {
     }
   };
 
-  // Render message view if conversation is selected
-  if (selectedConversation) {
-    return (
-      <MainLayout>
-        <MessageView
-          conversation={selectedConversation}
-          messages={messages}
-          messageText={messageText}
-          isLoadingMessages={isLoadingMessages}
-          isSendingMessage={isSendingMessage}
-          onBack={handleBackToList}
-          onMessageChange={setMessageText}
-          onSendMessage={handleSendMessage}
-        />
-      </MainLayout>
-    );
-  }
-
-  // Render conversation list
+  // Render using new ChatLayout component
   return (
     <MainLayout>
-      <ConversationListView
-        conversations={conversations}
-        isLoading={isLoadingConversations}
-        onConversationClick={handleConversationClick}
-        onStartChat={handleStartChat}
+      <ChatLayout
+        conversationList={
+          <ConversationListView
+            conversations={conversations}
+            isLoading={isLoadingConversations}
+            onConversationClick={handleConversationClick}
+            onStartChat={handleStartChat}
+          />
+        }
+        messageView={
+          selectedConversation ? (
+            <MessageView
+              conversation={selectedConversation}
+              messages={messages}
+              messageText={messageText}
+              isLoadingMessages={isLoadingMessages}
+              isSendingMessage={isSendingMessage}
+              onBack={handleBackToList}
+              onMessageChange={setMessageText}
+              onSendMessage={handleSendMessage}
+            />
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                gap: 2,
+                bgcolor: 'background.default',
+              }}
+            >
+              <Typography variant="h5" color="text.secondary">
+                Select a conversation
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Choose a conversation from the list to start messaging
+              </Typography>
+            </Box>
+          )
+        }
+        showMessageView={!!selectedConversation}
       />
 
       <StartChatModal

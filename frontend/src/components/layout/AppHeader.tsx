@@ -1,5 +1,5 @@
-import { AppBar, Toolbar, IconButton, Typography, Box, Avatar, Menu, MenuItem, Divider } from '@mui/material';
-import { Menu as MenuIcon, Logout as LogoutIcon, Settings as SettingsIcon, Person as PersonIcon } from '@mui/icons-material';
+import { AppBar, Toolbar, IconButton, Typography, Box, Avatar, Menu, MenuItem, Divider, InputBase, Badge } from '@mui/material';
+import { Menu as MenuIcon, Logout as LogoutIcon, Settings as SettingsIcon, Person as PersonIcon, Search as SearchIcon, Notifications as NotificationsIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
@@ -79,11 +79,66 @@ export const AppHeader = ({ drawerWidth, onMenuClick, isMobile }: AppHeaderProps
           </IconButton>
         )}
 
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-          Connect With Me
+        <Typography variant="h6" noWrap component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
+          💬 Connect With Me
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {/* Search Bar */}
+        <Box
+          sx={{
+            position: 'relative',
+            borderRadius: 2,
+            bgcolor: 'action.hover',
+            '&:hover': {
+              bgcolor: 'action.selected',
+            },
+            ml: { xs: 0, sm: 3 },
+            mr: 2,
+            width: { xs: '100%', sm: 'auto' },
+            flexGrow: { xs: 1, sm: 0 },
+          }}
+        >
+          <Box
+            sx={{
+              padding: theme => theme.spacing(0, 2),
+              height: '100%',
+              position: 'absolute',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <SearchIcon sx={{ color: 'text.secondary' }} />
+          </Box>
+          <InputBase
+            placeholder="Search..."
+            sx={{
+              color: 'inherit',
+              width: { xs: '100%', sm: '300px' },
+              '& .MuiInputBase-input': {
+                padding: theme => theme.spacing(1, 1, 1, 0),
+                paddingLeft: theme => `calc(1em + ${theme.spacing(4)})`,
+                transition: theme => theme.transitions.create('width'),
+                width: '100%',
+              },
+            }}
+          />
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Notifications */}
+          <IconButton
+            color="inherit"
+            onClick={() => navigate('/notifications')}
+            aria-label="notifications"
+          >
+            <Badge badgeContent={0} color="error">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+
+          {/* User Menu */}
           <IconButton
             onClick={handleMenuOpen}
             size="small"

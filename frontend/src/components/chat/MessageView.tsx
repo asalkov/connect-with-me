@@ -1,8 +1,9 @@
-import { Box, Typography, Paper, IconButton, TextField, Divider, List, Avatar } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Send as SendIcon } from '@mui/icons-material';
+import { Box, Typography, IconButton, InputBase, Avatar, CircularProgress, Chip } from '@mui/material';
+import { ArrowBack as ArrowBackIcon, Send as SendIcon, MoreVert as MoreVertIcon, EmojiEmotions as EmojiIcon, AttachFile as AttachFileIcon, Mic as MicIcon } from '@mui/icons-material';
 import { MessageBubble } from './MessageBubble';
 import { MessageDisplay } from '../../hooks/useMessages';
 import { ConversationDisplay } from '../../hooks/useConversations';
+import { useMediaQuery, useTheme } from '@mui/material';
 
 interface MessageViewProps {
   conversation: ConversationDisplay;
@@ -25,6 +26,9 @@ export const MessageView = ({
   onMessageChange,
   onSendMessage,
 }: MessageViewProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -33,70 +37,143 @@ export const MessageView = ({
   };
 
   return (
-    <Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={onBack} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          p: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        {isMobile && (
+          <IconButton onClick={onBack} sx={{ mr: 1 }} edge="start">
+            <ArrowBackIcon />
+          </IconButton>
+        )}
+        <Avatar sx={{ bgcolor: 'primary.main', width: 40, height: 40, mr: 2 }}>
           {conversation.userInitials}
         </Avatar>
-        <Typography variant="h5" component="h1">
-          {conversation.userName}
-        </Typography>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="subtitle1" fontWeight={600}>
+            {conversation.userName}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            🟢 Online • Last seen just now
+          </Typography>
+        </Box>
+        <IconButton size="small">
+          <MoreVertIcon />
+        </IconButton>
       </Box>
 
-      {/* Messages Container */}
-      <Paper elevation={2} sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 250px)' }}>
-        {/* Messages List */}
-        <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-          {isLoadingMessages ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography color="text.secondary">Loading messages...</Typography>
-            </Box>
-          ) : messages.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-              <Typography color="text.secondary">No messages yet. Start the conversation!</Typography>
-            </Box>
-          ) : (
-            <List>
-              {messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  content={message.content}
-                  timestamp={message.timestamp}
-                  isOwn={message.isOwn}
-                />
-              ))}
-            </List>
-          )}
-        </Box>
+      {/* Messages Area */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
+        {isLoadingMessages ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <CircularProgress />
+          </Box>
+        ) : messages.length === 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 2 }}>
+            <Typography variant="h6" color="text.secondary">
+              No messages yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Start the conversation!
+            </Typography>
+          </Box>
+        ) : (
+          messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              content={message.content}
+              timestamp={message.timestamp}
+              isOwn={message.isOwn}
+            />
+          ))
+        )}
+      </Box>
 
-        <Divider />
-
-        {/* Message Input */}
-        <Box sx={{ p: 2, display: 'flex', gap: 1 }}>
-          <TextField
+      {/* Message Input */}
+      <Box
+        sx={{
+          p: 2,
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 1,
+            bgcolor: 'action.hover',
+            borderRadius: 3,
+            px: 2,
+            py: 1,
+          }}
+        >
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
+            <EmojiIcon fontSize="small" />
+          </IconButton>
+          
+          <InputBase
             fullWidth
             placeholder="Type a message..."
             value={messageText}
             onChange={(e) => onMessageChange(e.target.value)}
             onKeyPress={handleKeyPress}
-            variant="outlined"
-            size="small"
             multiline
             maxRows={4}
+            sx={{
+              flex: 1,
+              fontSize: '0.875rem',
+              py: 0.5,
+            }}
           />
-          <IconButton
-            color="primary"
-            onClick={onSendMessage}
-            disabled={isSendingMessage || !messageText.trim()}
-          >
-            <SendIcon />
+
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
+            <AttachFileIcon fontSize="small" />
           </IconButton>
+
+          {messageText.trim() ? (
+            <IconButton
+              color="primary"
+              onClick={onSendMessage}
+              disabled={isSendingMessage}
+              sx={{
+                bgcolor: 'primary.main',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                },
+                '&.Mui-disabled': {
+                  bgcolor: 'action.disabledBackground',
+                },
+              }}
+            >
+              <SendIcon fontSize="small" />
+            </IconButton>
+          ) : (
+            <IconButton size="small" sx={{ color: 'text.secondary' }}>
+              <MicIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 };
