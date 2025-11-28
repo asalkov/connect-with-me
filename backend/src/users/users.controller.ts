@@ -20,7 +20,7 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto, UserResponseDto, SearchUsersDto } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { User } from '../entities/user.entity';
+import { User } from '../types/user.types';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import * as fs from 'fs';

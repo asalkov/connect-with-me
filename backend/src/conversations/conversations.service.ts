@@ -1,12 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Conversation, ConversationType } from '../entities/conversation.entity';
-import { User } from '../entities/user.entity';
+import { Conversation, ConversationType } from './types/conversation.types';
 import { IConversationRepository, CreateConversationData } from './repositories/conversation.repository.interface';
 import { DynamoDBConversationRepository } from './repositories/dynamodb-conversation.repository';
-import { TypeORMConversationRepository } from './repositories/typeorm-conversation.repository';
 import { DynamoDBService } from '../database/dynamodb';
 
 @Injectable()
@@ -15,25 +11,10 @@ export class ConversationsService {
 
   constructor(
     private configService: ConfigService,
-    @Optional() @InjectRepository(Conversation)
-    private typeormConversationRepository: Repository<Conversation>,
-    @Optional() @InjectRepository(User)
-    private typeormUserRepository: Repository<User>,
     private dynamoDBService: DynamoDBService,
   ) {
-    // Initialize the appropriate repository
-    const useDynamoDB = this.configService.get('DYNAMODB_CONVERSATIONS_TABLE');
-    
-    if (useDynamoDB) {
-      console.log('Using DynamoDB Conversation Repository');
-      this.conversationRepository = new DynamoDBConversationRepository(this.dynamoDBService);
-    } else {
-      console.log('Using TypeORM Conversation Repository');
-      this.conversationRepository = new TypeORMConversationRepository(
-        this.typeormConversationRepository,
-        this.typeormUserRepository,
-      );
-    }
+    console.log('💬 Conversations Service: Using DynamoDB Repository');
+    this.conversationRepository = new DynamoDBConversationRepository(this.dynamoDBService);
   }
 
   async createConversation(

@@ -1,11 +1,8 @@
-import { Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Message } from '../entities/message.entity';
+import { Message } from './types/message.types';
 import { IMessageRepository } from './repositories/message.repository.interface';
 import { DynamoDBMessageRepository } from './repositories/dynamodb-message.repository';
-import { TypeORMMessageRepository } from './repositories/typeorm-message.repository';
 import { DynamoDBService } from '../database/dynamodb';
 
 @Injectable()
@@ -14,23 +11,13 @@ export class MessagesService {
 
   constructor(
     private configService: ConfigService,
-    @Optional() @InjectRepository(Message)
-    private typeormRepository: Repository<Message>,
     private dynamoDBService: DynamoDBService,
   ) {
-    // Initialize the appropriate repository
-    const useDynamoDB = this.configService.get('DYNAMODB_MESSAGES_TABLE');
-    
-    if (useDynamoDB) {
-      console.log('Using DynamoDB Message Repository');
-      this.messageRepository = new DynamoDBMessageRepository(this.dynamoDBService);
-    } else {
-      console.log('Using TypeORM Message Repository');
-      this.messageRepository = new TypeORMMessageRepository(this.typeormRepository);
-    }
+    console.log('📨 Messages Service: Using DynamoDB Repository');
+    this.messageRepository = new DynamoDBMessageRepository(this.dynamoDBService);
   }
 
-  async create(messageData: any): Promise<Message> {
+  async create(messageData: any): Promise<any> {
     return await this.messageRepository.create(messageData);
   }
 

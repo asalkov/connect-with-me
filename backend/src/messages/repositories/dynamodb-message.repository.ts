@@ -9,7 +9,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
-import { Message, MessageType, MessageStatus } from '../../entities/message.entity';
+import { Message, MessageType, MessageStatus } from '../types/message.types';
 import {
   IMessageRepository,
   CreateMessageData,
@@ -35,18 +35,11 @@ export class DynamoDBMessageRepository implements IMessageRepository {
       status: MessageStatus.SENT,
       senderId: messageData.senderId,
       conversationId: messageData.conversationId,
-      fileUrl: messageData.fileUrl,
-      fileName: messageData.fileName,
-      fileSize: messageData.fileSize,
-      fileMimeType: messageData.fileMimeType,
-      metadata: messageData.metadata,
       isEdited: false,
       isDeleted: false,
       deletedAt: null,
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
-      sender: null,
-      conversation: null,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const command = new PutCommand({
@@ -58,18 +51,13 @@ export class DynamoDBMessageRepository implements IMessageRepository {
         GSI1SK: 'METADATA',
         id: message.id,
         content: message.content,
-        type: message.type,
-        status: message.status,
+        type: message.type || MessageType.TEXT,
+        status: message.status || MessageStatus.SENT,
         senderId: message.senderId,
         conversationId: message.conversationId,
-        fileUrl: message.fileUrl,
-        fileName: message.fileName,
-        fileSize: message.fileSize,
-        fileMimeType: message.fileMimeType,
-        metadata: message.metadata,
-        isEdited: message.isEdited,
-        isDeleted: message.isDeleted,
-        deletedAt: message.deletedAt,
+        isEdited: false,
+        isDeleted: false,
+        deletedAt: null,
         createdAt: now,
         updatedAt: now,
         entityType: 'MESSAGE',
@@ -173,7 +161,7 @@ export class DynamoDBMessageRepository implements IMessageRepository {
       TableName: this.tableName,
       Key: {
         PK: `CONVERSATION#${existingMessage.conversationId}`,
-        SK: `MESSAGE#${existingMessage.createdAt.toISOString()}#${existingMessage.id}`,
+        SK: `MESSAGE#${existingMessage.createdAt}#${existingMessage.id}`,
       },
       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
@@ -222,18 +210,11 @@ export class DynamoDBMessageRepository implements IMessageRepository {
       status: item.status as MessageStatus,
       senderId: item.senderId,
       conversationId: item.conversationId,
-      fileUrl: item.fileUrl,
-      fileName: item.fileName,
-      fileSize: item.fileSize,
-      fileMimeType: item.fileMimeType,
-      metadata: item.metadata,
       isEdited: item.isEdited,
       isDeleted: item.isDeleted,
-      deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-      createdAt: new Date(item.createdAt),
-      updatedAt: new Date(item.updatedAt),
-      sender: null,
-      conversation: null,
+      deletedAt: item.deletedAt || null,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     };
   }
 }

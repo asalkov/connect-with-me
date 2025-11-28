@@ -7,10 +7,13 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import ToastContainer from './components/common/ToastContainer';
 
 function App() {
   return (
-    <Routes>
+    <>
+      <ToastContainer />
+      <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
@@ -54,7 +57,8 @@ function App() {
         }
       />
       <Route path="/" element={<Navigate to="/chat" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

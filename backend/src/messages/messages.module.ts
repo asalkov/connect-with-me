@@ -1,24 +1,16 @@
 import { Module, DynamicModule } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MessagesService } from './messages.service';
-import { Message } from '../entities/message.entity';
+import { MessagesController } from './messages.controller';
+import { DynamoDBService } from '../database/dynamodb';
 
 @Module({})
 export class MessagesModule {
   static forRoot(): DynamicModule {
-    const useDynamoDB = process.env.DYNAMODB_MESSAGES_TABLE !== undefined;
-
-    const imports: any[] = [];
-    
-    // Only import TypeORM if not using DynamoDB
-    if (!useDynamoDB) {
-      imports.push(TypeOrmModule.forFeature([Message]));
-    }
-
     return {
       module: MessagesModule,
-      imports,
-      providers: [MessagesService],
+      imports: [],
+      controllers: [MessagesController],
+      providers: [MessagesService, DynamoDBService],
       exports: [MessagesService],
     };
   }

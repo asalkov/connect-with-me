@@ -101,14 +101,39 @@ export const handler = async (
     const httpMethod = (event as any).requestContext?.http?.method || (event as any).httpMethod;
     if (httpMethod === 'OPTIONS') {
       console.log('Handling OPTIONS preflight request');
-      const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
+      
+      // Get the origin from the request
+      const requestOrigin = (event as any).headers?.origin || (event as any).headers?.Origin;
+      
+      // Determine allowed origin
+      let allowedOrigin = 'https://d3mdmjrv9mx88k.cloudfront.net'; // Default production
+      
+      // Check if request is from localhost (for local testing)
+      if (requestOrigin && requestOrigin.includes('localhost')) {
+        allowedOrigin = requestOrigin;
+      } else if (process.env.FRONTEND_URL) {
+        allowedOrigin = process.env.FRONTEND_URL;
+      } else if (requestOrigin) {
+        // Use the request origin if it matches our allowed list
+        const allowedOrigins = [
+          'https://d3mdmjrv9mx88k.cloudfront.net',
+          'http://localhost:5173',
+          'http://localhost:5174',
+        ];
+        if (allowedOrigins.includes(requestOrigin)) {
+          allowedOrigin = requestOrigin;
+        }
+      }
+      
+      console.log('CORS preflight - Request origin:', requestOrigin, 'Allowed origin:', allowedOrigin);
+      
       return {
         statusCode: 200,
         headers: {
-          'access-control-allow-origin': origin,
+          'access-control-allow-origin': allowedOrigin,
           'access-control-allow-credentials': 'true',
           'access-control-allow-methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-          'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with',
+          'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with,origin',
           'access-control-max-age': '86400',
           'vary': 'Origin',
         },
@@ -131,12 +156,34 @@ export const handler = async (
           console.log('Response:', res.statusCode);
           
           // Ensure CORS headers are present in all responses
-          const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
+          // Get the origin from the request
+          const requestOrigin = (v1Event as any).headers?.origin || (v1Event as any).headers?.Origin;
+          
+          // Determine allowed origin
+          let allowedOrigin = 'https://d3mdmjrv9mx88k.cloudfront.net'; // Default production
+          
+          // Check if request is from localhost (for local testing)
+          if (requestOrigin && requestOrigin.includes('localhost')) {
+            allowedOrigin = requestOrigin;
+          } else if (process.env.FRONTEND_URL) {
+            allowedOrigin = process.env.FRONTEND_URL;
+          } else if (requestOrigin) {
+            // Use the request origin if it matches our allowed list
+            const allowedOrigins = [
+              'https://d3mdmjrv9mx88k.cloudfront.net',
+              'http://localhost:5173',
+              'http://localhost:5174',
+            ];
+            if (allowedOrigins.includes(requestOrigin)) {
+              allowedOrigin = requestOrigin;
+            }
+          }
+          
           const corsHeaders = {
-            'access-control-allow-origin': origin,
+            'access-control-allow-origin': allowedOrigin,
             'access-control-allow-credentials': 'true',
             'access-control-allow-methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
-            'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with',
+            'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with,origin',
             'vary': 'Origin',
           };
           
@@ -157,15 +204,38 @@ export const handler = async (
     });
   } catch (error) {
     console.error('Lambda handler error:', error);
-    const origin = process.env.FRONTEND_URL || 'https://d3mdmjrv9mx88k.cloudfront.net';
+    
+    // Get the origin from the request
+    const requestOrigin = (event as any).headers?.origin || (event as any).headers?.Origin;
+    
+    // Determine allowed origin
+    let allowedOrigin = 'https://d3mdmjrv9mx88k.cloudfront.net'; // Default production
+    
+    // Check if request is from localhost (for local testing)
+    if (requestOrigin && requestOrigin.includes('localhost')) {
+      allowedOrigin = requestOrigin;
+    } else if (process.env.FRONTEND_URL) {
+      allowedOrigin = process.env.FRONTEND_URL;
+    } else if (requestOrigin) {
+      // Use the request origin if it matches our allowed list
+      const allowedOrigins = [
+        'https://d3mdmjrv9mx88k.cloudfront.net',
+        'http://localhost:5173',
+        'http://localhost:5174',
+      ];
+      if (allowedOrigins.includes(requestOrigin)) {
+        allowedOrigin = requestOrigin;
+      }
+    }
+    
     return {
       statusCode: 500,
       headers: {
         'content-type': 'application/json',
-        'access-control-allow-origin': origin,
+        'access-control-allow-origin': allowedOrigin,
         'access-control-allow-credentials': 'true',
-        'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
-        'access-control-allow-headers': 'Content-Type,Authorization',
+        'access-control-allow-methods': 'GET,POST,PUT,DELETE,PATCH,OPTIONS',
+        'access-control-allow-headers': 'content-type,authorization,accept,x-requested-with,origin',
         'vary': 'Origin',
       },
       body: JSON.stringify({

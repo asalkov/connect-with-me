@@ -1,4 +1,4 @@
-import { User } from '../../entities/user.entity';
+import { User } from '../../types/user.types';
 
 export interface CreateUserData {
   email: string;

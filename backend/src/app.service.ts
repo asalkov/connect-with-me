@@ -1,15 +1,7 @@
-import { Injectable, Optional } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  constructor(
-    @Optional()
-    @InjectDataSource()
-    private dataSource?: DataSource,
-  ) {}
-
   getInfo() {
     return {
       name: 'Chat Application API',
@@ -20,24 +12,7 @@ export class AppService {
   }
 
   async getHealth() {
-    let dbStatus = 'not-configured';
-    
-    // Check if using DynamoDB (Lambda environment)
-    if (process.env.DYNAMODB_USERS_TABLE) {
-      dbStatus = 'dynamodb';
-    } else if (this.dataSource) {
-      // Check TypeORM/SQLite connection
-      try {
-        if (this.dataSource.isInitialized) {
-          await this.dataSource.query('SELECT 1');
-          dbStatus = 'connected';
-        } else {
-          dbStatus = 'disconnected';
-        }
-      } catch (error) {
-        dbStatus = 'error';
-      }
-    }
+    const dbStatus = process.env.DYNAMODB_USERS_TABLE ? 'dynamodb' : 'not-configured';
 
     return {
       status: 'ok',

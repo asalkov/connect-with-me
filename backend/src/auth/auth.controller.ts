@@ -19,7 +19,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { User } from '../entities/user.entity';
+import { User } from '../types/user.types';
 
 @ApiTags('Authentication')
 @Controller('auth')

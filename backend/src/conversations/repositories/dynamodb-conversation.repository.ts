@@ -9,7 +9,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
-import { Conversation, ConversationType } from '../../entities/conversation.entity';
+import { Conversation, ConversationType } from '../types/conversation.types';
 import {
   IConversationRepository,
   CreateConversationData,
@@ -35,12 +35,10 @@ export class DynamoDBConversationRepository implements IConversationRepository {
       description: conversationData.description,
       avatarUrl: conversationData.avatarUrl,
       createdBy: conversationData.createdBy,
-      isActive: true,
-      createdAt: new Date(now),
-      updatedAt: new Date(now),
+      createdAt: now,
+      updatedAt: now,
       lastMessageAt: null,
-      participants: [], // Will be populated separately
-      messages: [],
+      participants: [],
     };
 
     // Create main conversation record
@@ -55,12 +53,12 @@ export class DynamoDBConversationRepository implements IConversationRepository {
         description: conversation.description,
         avatarUrl: conversation.avatarUrl,
         createdBy: conversation.createdBy,
-        isActive: conversation.isActive,
         createdAt: now,
         updatedAt: now,
         lastMessageAt: null,
         participantIds: conversationData.participantIds,
         entityType: 'CONVERSATION',
+        participants: conversation.participants,
       },
       ConditionExpression: 'attribute_not_exists(PK)',
     });
@@ -129,7 +127,7 @@ export class DynamoDBConversationRepository implements IConversationRepository {
 
     const command = new QueryCommand({
       TableName: this.tableName,
-      IndexName: 'GSI1',
+      IndexName: 'UserConversationsIndex',
       KeyConditionExpression: 'GSI1PK = :pk AND begins_with(GSI1SK, :sk)',
       ExpressionAttributeValues: {
         ':pk': `USER#${userId}`,
@@ -383,12 +381,10 @@ export class DynamoDBConversationRepository implements IConversationRepository {
       description: item.description,
       avatarUrl: item.avatarUrl,
       createdBy: item.createdBy,
-      isActive: item.isActive,
-      createdAt: new Date(item.createdAt),
-      updatedAt: new Date(item.updatedAt),
-      lastMessageAt: item.lastMessageAt ? new Date(item.lastMessageAt) : null,
-      participants: [], // Populated separately if needed
-      messages: [], // Populated separately if needed
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      lastMessageAt: item.lastMessageAt || null,
+      participants: []
     };
   }
 }

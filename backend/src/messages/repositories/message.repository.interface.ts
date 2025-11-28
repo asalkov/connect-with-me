@@ -1,4 +1,4 @@
-import { Message } from '../../entities/message.entity';
+import { Message } from '../types/message.types';
 
 export interface CreateMessageData {
   content: string;

@@ -1,66 +1,152 @@
-import { Box, Typography, Paper, Avatar, Chip } from '@mui/material';
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { MainLayout } from '../components/layout';
-import { useAppSelector } from '../store/hooks';
+import { ConversationListView } from '../components/chat/ConversationListView';
+import { MessageView } from '../components/chat/MessageView';
+import { StartChatModal } from '../components/chat/StartChatModal';
+import { useConversations, ConversationDisplay } from '../hooks/useConversations';
+import { useMessages } from '../hooks/useMessages';
+import { useUserSearch } from '../hooks/useUserSearch';
+import { conversationsService } from '../services/conversations.api';
+import { messagesService } from '../services/messages.api';
+import { User as ApiUser } from '../types/user';
+import { getUserDisplayName, getUserInitials } from '../utils/userHelpers';
+import { RootState } from '../store';
 
 export const ChatPage = () => {
-  //const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const [selectedConversation, setSelectedConversation] = useState<ConversationDisplay | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [showStartChatModal, setShowStartChatModal] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-  // useEffect(() => {
-    //   // Fetch user profile on mount
-    //   dispatch(getProfile());
-    // }, [dispatch]);
+  // Custom hooks
+  const { conversations, isLoading: isLoadingConversations, updateConversationLastMessage, addConversation } = useConversations(currentUser?.id);
+  const { messages, isLoading: isLoadingMessages, addMessage } = useMessages(selectedConversation?.id || null, currentUser?.id);
+  const { searchQuery, setSearchQuery, searchResults, isSearching, error: searchError } = useUserSearch(currentUser?.id);
 
+  // Handlers
+  const handleConversationClick = (conversation: ConversationDisplay) => {
+    setSelectedConversation(conversation);
+  };
+
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+  };
+
+  const handleStartChat = () => {
+    setShowStartChatModal(true);
+    setSearchQuery('');
+  };
+
+  const handleCloseModal = () => {
+    setShowStartChatModal(false);
+    setSearchQuery('');
+  };
+
+  const handleUserSelect = async (user: ApiUser) => {
+    try {
+      // Check if conversation already exists with this user
+      const existingConv = conversations.find((conv) => conv.participantIds.includes(user.id));
+
+      if (existingConv) {
+        setSelectedConversation(existingConv);
+        handleCloseModal();
+        return;
+      }
+
+      // Create new conversation via API
+      const newConversation = await conversationsService.createConversation({
+        type: 'direct',
+        participantIds: [user.id],
+      });
+
+      const newConvDisplay: ConversationDisplay = {
+        id: newConversation.id,
+        userName: getUserDisplayName(user),
+        userInitials: getUserInitials(user),
+        lastMessage: 'No messages yet',
+        timestamp: new Date(newConversation.createdAt).toLocaleDateString(),
+        participantIds: newConversation.participants,
+      };
+
+      addConversation(newConvDisplay);
+      setSelectedConversation(newConvDisplay);
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedConversation || isSendingMessage) {
+      return;
+    }
+
+    try {
+      setIsSendingMessage(true);
+
+      // Send message via API
+      const newMessage = await messagesService.sendMessage({
+        content: messageText.trim(),
+        conversationId: selectedConversation.id,
+        type: 'text',
+      });
+
+      addMessage({
+        id: newMessage.id,
+        content: newMessage.content,
+        timestamp: new Date(newMessage.createdAt).toLocaleTimeString(),
+        isOwn: true,
+      });
+
+      setMessageText('');
+      updateConversationLastMessage(selectedConversation.id, newMessage.content);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
+  // Render message view if conversation is selected
+  if (selectedConversation) {
+    return (
+      <MainLayout>
+        <MessageView
+          conversation={selectedConversation}
+          messages={messages}
+          messageText={messageText}
+          isLoadingMessages={isLoadingMessages}
+          isSendingMessage={isSendingMessage}
+          onBack={handleBackToList}
+          onMessageChange={setMessageText}
+          onSendMessage={handleSendMessage}
+        />
+      </MainLayout>
+    );
+  }
+
+  // Render conversation list
   return (
     <MainLayout>
-      <Box>
-        <Paper elevation={2} sx={{ p: 4, mb: 3 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            Chats
-          </Typography>
+      <ConversationListView
+        conversations={conversations}
+        isLoading={isLoadingConversations}
+        onConversationClick={handleConversationClick}
+        onStartChat={handleStartChat}
+      />
 
-          {user && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-              <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main' }}>
-                {user.firstName?.[0] || user.username[0].toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="h6">
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.username}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {user.email}
-                </Typography>
-              </Box>
-              <Chip label="Online" color="success" size="small" sx={{ ml: 'auto' }} />
-            </Box>
-          )}
-
-          <Typography variant="body1" color="text.secondary" paragraph>
-            Welcome to your chat dashboard! The messaging interface will be implemented in the next sprint.
-          </Typography>
-
-          <Box sx={{ mt: 4, p: 3, bgcolor: 'background.default', borderRadius: 2 }}>
-            <Typography variant="h6" gutterBottom fontWeight={600}>
-              Coming Soon:
-            </Typography>
-            <Typography component="div" variant="body2" color="text.secondary">
-              <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
-                <li>Real-time messaging with WebSocket</li>
-                <li>Direct and group conversations</li>
-                <li>File sharing and media preview</li>
-                <li>User presence indicators</li>
-                <li>Typing indicators</li>
-                <li>Message reactions and emojis</li>
-                <li>Message search and history</li>
-                <li>Push notifications</li>
-              </ul>
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
+      <StartChatModal
+        open={showStartChatModal}
+        searchQuery={searchQuery}
+        searchResults={searchResults}
+        isSearching={isSearching}
+        error={searchError}
+        onClose={handleCloseModal}
+        onSearchChange={setSearchQuery}
+        onUserSelect={handleUserSelect}
+      />
     </MainLayout>
   );
 };

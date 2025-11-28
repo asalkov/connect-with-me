@@ -1,29 +1,18 @@
 import { Module, DynamicModule } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
 import { ConversationsController } from './conversations.controller';
 import { ConversationsService } from './conversations.service';
-import { Conversation } from '../entities/conversation.entity';
-import { User } from '../entities/user.entity';
-import { DynamoDBService } from '../database/dynamodb';
-import { DynamoDBConversationRepository } from './repositories/dynamodb-conversation.repository';
-import { TypeORMConversationRepository } from './repositories/typeorm-conversation.repository';
+import { DatabaseModule } from '../database/database.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({})
 export class ConversationsModule {
   static forRoot(): DynamicModule {
-    const useDynamoDB = process.env.DYNAMODB_CONVERSATIONS_TABLE !== undefined;
-
-    const imports: any[] = [];
-    
-    // Only import TypeORM if not using DynamoDB
-    if (!useDynamoDB) {
-      imports.push(TypeOrmModule.forFeature([Conversation, User]));
-    }
-
     return {
       module: ConversationsModule,
-      imports,
+      imports: [
+        DatabaseModule,
+        UsersModule.forRoot(),
+      ],
       controllers: [ConversationsController],
       providers: [ConversationsService],
       exports: [ConversationsService],

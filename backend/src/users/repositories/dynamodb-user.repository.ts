@@ -9,7 +9,7 @@ import {
 } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
 import { DynamoDBService } from '../../database/dynamodb';
-import { User, UserStatus } from '../../entities/user.entity';
+import { User, UserStatus } from '../../types/user.types';
 import {
   IUserRepository,
   CreateUserData,
@@ -43,8 +43,6 @@ export class DynamoDBUserRepository implements IUserRepository {
       lastSeenAt: null,
       createdAt: now,
       updatedAt: now,
-      messages: [],
-      conversations: [],
     };
 
     const command = new PutCommand({

@@ -1,12 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, Optional } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, ILike } from 'typeorm';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../entities/user.entity';
+import { User } from '../types/user.types';
 import { UpdateProfileDto, UserResponseDto, SearchUsersDto } from './dto';
 import { IUserRepository } from './repositories/user.repository.interface';
 import { DynamoDBUserRepository } from './repositories/dynamodb-user.repository';
-import { TypeORMUserRepository } from './repositories/typeorm-user.repository';
 import { DynamoDBService } from '../database/dynamodb';
 
 @Injectable()
@@ -15,23 +12,10 @@ export class UsersService {
 
   constructor(
     private configService: ConfigService,
-    @Optional() @InjectRepository(User)
-    private readonly typeormRepository: Repository<User>,
     private dynamoDBService: DynamoDBService,
   ) {
-    // Initialize the appropriate repository based on environment
-    const useDynamoDB = this.configService.get('DYNAMODB_USERS_TABLE');
-
-    if (useDynamoDB) {
-      console.log('👤 Users Service: Using DynamoDB User Repository');
-      this.userRepository = new DynamoDBUserRepository(this.dynamoDBService);
-    } else {
-      console.log('👤 Users Service: Using TypeORM User Repository');
-      if (!this.typeormRepository) {
-        throw new Error('TypeORM repository not available. Ensure TypeORM module is loaded.');
-      }
-      this.userRepository = new TypeORMUserRepository(this.typeormRepository);
-    }
+    console.log('👤 Users Service: Using DynamoDB User Repository');
+    this.userRepository = new DynamoDBUserRepository(this.dynamoDBService);
   }
 
   /**

@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
+import { UsersService } from '../users/users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ConversationType } from '../entities/conversation.entity';
+import { ConversationType } from './types/conversation.types';
 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard)
 export class ConversationsController {
-  constructor(private conversationsService: ConversationsService) {}
+  constructor(
+    private conversationsService: ConversationsService,
+    private usersService: UsersService,
+  ) {}
 
   @Post()
   async createConversation(
@@ -28,7 +32,48 @@ export class ConversationsController {
       req.user.id,
       limit ? parseInt(String(limit)) : undefined,
     );
-    return { conversations };
+
+    // Enrich conversations with participant details
+    const enrichedConversations = await Promise.all(
+      conversations.map(async (conversation) => {
+        const participantIds = await this.conversationsService.getParticipants(conversation.id, req.user.id);
+        
+        // Fetch user details for all participants
+        const participants = await Promise.all(
+          participantIds.map(async (participantId) => {
+            try {
+              const user = await this.usersService.findById(participantId);
+              return {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                avatarUrl: user.avatarUrl,
+                status: user.status,
+              };
+            } catch (error) {
+              return null;
+            }
+          })
+        );
+
+        // For direct conversations, find the other user
+        let otherUser = null;
+        if (conversation.type === ConversationType.DIRECT) {
+          const otherParticipant = participants.find(p => p && p.id !== req.user.id);
+          otherUser = otherParticipant;
+        }
+
+        return {
+          ...conversation,
+          participants: participants.filter(p => p !== null),
+          otherUser,
+        };
+      })
+    );
+
+    return { conversations: enrichedConversations };
   }
 
   @Get(':id')

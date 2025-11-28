@@ -1,4 +1,4 @@
-import { Conversation, ConversationType } from '../../entities/conversation.entity';
+import { Conversation, ConversationType } from '../types/conversation.types';
 
 export interface CreateConversationData {
   type: ConversationType;
