@@ -23,7 +23,11 @@ export const MessageBubble = ({ content, timestamp, isOwn, isRead = false }: Mes
           maxWidth: '70%',
           px: 2,
           py: 1.5,
-          bgcolor: isOwn ? 'primary.main' : 'grey.100',
+          bgcolor: isOwn 
+            ? 'primary.main' 
+            : (theme) => theme.palette.mode === 'dark' 
+              ? 'grey.800' 
+              : 'grey.100',
           color: isOwn ? 'white' : 'text.primary',
           borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
           boxShadow: 1,
