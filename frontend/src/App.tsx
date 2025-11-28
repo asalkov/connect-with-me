@@ -6,6 +6,7 @@ import { GroupsPage } from './pages/GroupsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NotificationsPage } from './pages/NotificationsPage';
+import { ComponentShowcase } from './pages/ComponentShowcase';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import ToastContainer from './components/common/ToastContainer';
 
@@ -16,6 +17,7 @@ function App() {
       <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/showcase" element={<ComponentShowcase />} />
       <Route
         path="/chat"
         element={
