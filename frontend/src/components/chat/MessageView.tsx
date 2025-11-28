@@ -104,6 +104,7 @@ export const MessageView = ({
                 content={message.content}
                 timestamp={message.timestamp}
                 isOwn={message.isOwn}
+                status={message.status}
               />
             ))}
             {isTyping && <TypingIndicator userName={conversation.userName} />}

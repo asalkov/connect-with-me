@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { messagesService } from '../services/messages.api';
+import { MessageStatus } from '../components/chat';
 
 export interface MessageDisplay {
   id: string;
   content: string;
   timestamp: string;
   isOwn: boolean;
+  status?: MessageStatus;
 }
 
 export const useMessages = (conversationId: string | null, currentUserId?: string) => {
@@ -24,6 +26,7 @@ export const useMessages = (conversationId: string | null, currentUserId?: strin
         content: msg.content,
         timestamp: new Date(msg.createdAt).toLocaleTimeString(),
         isOwn: msg.senderId === currentUserId,
+        status: msg.senderId === currentUserId ? 'read' : undefined, // Default to 'read' for own messages
       }));
 
       setMessages(messagesDisplay.reverse()); // Reverse to show oldest first

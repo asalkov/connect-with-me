@@ -1,14 +1,76 @@
-import { Box, Typography } from '@mui/material';
-import { Done as DoneIcon, DoneAll as DoneAllIcon } from '@mui/icons-material';
+import { Box, Typography, CircularProgress } from '@mui/material';
+import { 
+  Done as DoneIcon, 
+  DoneAll as DoneAllIcon,
+  Schedule as ScheduleIcon,
+  ErrorOutline as ErrorIcon
+} from '@mui/icons-material';
+
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 interface MessageBubbleProps {
   content: string;
   timestamp: string;
   isOwn: boolean;
-  isRead?: boolean;
+  status?: MessageStatus;
+  onRetry?: () => void;
 }
 
-export const MessageBubble = ({ content, timestamp, isOwn, isRead = false }: MessageBubbleProps) => {
+export const MessageBubble = ({ 
+  content, 
+  timestamp, 
+  isOwn, 
+  status = 'sent',
+  onRetry 
+}: MessageBubbleProps) => {
+  
+  // Render status icon based on message status
+  const renderStatusIcon = () => {
+    if (!isOwn) return null;
+
+    switch (status) {
+      case 'sending':
+        return (
+          <CircularProgress 
+            size={12} 
+            sx={{ color: 'text.secondary' }} 
+          />
+        );
+      case 'sent':
+        return (
+          <DoneIcon 
+            sx={{ fontSize: '0.875rem', color: 'text.secondary' }} 
+          />
+        );
+      case 'delivered':
+        return (
+          <DoneAllIcon 
+            sx={{ fontSize: '0.875rem', color: 'text.secondary' }} 
+          />
+        );
+      case 'read':
+        return (
+          <DoneAllIcon 
+            sx={{ fontSize: '0.875rem', color: 'primary.main' }} 
+          />
+        );
+      case 'failed':
+        return (
+          <ErrorIcon 
+            sx={{ 
+              fontSize: '0.875rem', 
+              color: 'error.main',
+              cursor: onRetry ? 'pointer' : 'default'
+            }}
+            onClick={onRetry}
+            titleAccess="Failed to send. Click to retry."
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -31,6 +93,8 @@ export const MessageBubble = ({ content, timestamp, isOwn, isRead = false }: Mes
           color: isOwn ? 'white' : 'text.primary',
           borderRadius: isOwn ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
           boxShadow: 1,
+          opacity: status === 'sending' ? 0.7 : 1,
+          transition: 'opacity 0.2s ease',
         }}
       >
         <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
@@ -46,16 +110,14 @@ export const MessageBubble = ({ content, timestamp, isOwn, isRead = false }: Mes
           px: 0.5,
         }}
       >
-        <Typography variant="caption" color="text.secondary" fontSize="0.7rem">
-          {timestamp}
+        <Typography 
+          variant="caption" 
+          color={status === 'failed' ? 'error.main' : 'text.secondary'} 
+          fontSize="0.7rem"
+        >
+          {status === 'failed' ? 'Failed to send' : timestamp}
         </Typography>
-        {isOwn && (
-          isRead ? (
-            <DoneAllIcon sx={{ fontSize: '0.875rem', color: 'primary.main' }} />
-          ) : (
-            <DoneIcon sx={{ fontSize: '0.875rem', color: 'text.secondary' }} />
-          )
-        )}
+        {renderStatusIcon()}
       </Box>
     </Box>
   );

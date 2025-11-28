@@ -1,5 +1,6 @@
 export { ConversationCard } from './ConversationCard';
 export { MessageBubble } from './MessageBubble';
+export type { MessageStatus } from './MessageBubble';
 export { UserSearchItem } from './UserSearchItem';
 export { EmptyState } from './EmptyState';
 export { ChatLayout } from './ChatLayout';
