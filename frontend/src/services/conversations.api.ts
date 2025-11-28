@@ -18,6 +18,12 @@ export interface Conversation {
   avatarUrl?: string;
   participants: ConversationParticipant[];
   otherUser?: ConversationParticipant;
+  lastMessage?: {
+    id: string;
+    content: string;
+    senderId: string;
+    createdAt: string;
+  };
   lastMessageAt?: string;
   createdAt: string;
   updatedAt: string;

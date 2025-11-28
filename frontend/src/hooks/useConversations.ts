@@ -40,7 +40,7 @@ export const useConversations = (currentUserId?: string) => {
           id: conv.id,
           userName,
           userInitials,
-          lastMessage: 'No messages yet',
+          lastMessage: conv.lastMessage?.content || 'No messages yet',
           timestamp: new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString(),
           participantIds: conv.participants.map(p => p.id),
         };

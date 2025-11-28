@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 import { UsersService } from '../users/users.service';
+import { MessagesService } from '../messages/messages.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { User } from '../types/user.types';
@@ -12,6 +13,7 @@ export class ConversationsController {
   constructor(
     private conversationsService: ConversationsService,
     private usersService: UsersService,
+    private messagesService: MessagesService,
   ) {}
 
   @Post()
@@ -35,7 +37,7 @@ export class ConversationsController {
       limit ? parseInt(String(limit)) : undefined,
     );
 
-    // Enrich conversations with participant details
+    // Enrich conversations with participant details and last message
     const enrichedConversations = await Promise.all(
       conversations.map(async (conversation) => {
         const participantIds = await this.conversationsService.getParticipants(conversation.id, user.id);
@@ -67,10 +69,31 @@ export class ConversationsController {
           otherUser = otherParticipant;
         }
 
+        // Fetch last message for the conversation
+        let lastMessage = null;
+        try {
+          const result = await this.messagesService.findByConversationId({
+            conversationId: conversation.id,
+            limit: 1,
+          });
+          if (result && result.messages && result.messages.length > 0) {
+            const msg = result.messages[0];
+            lastMessage = {
+              id: msg.id,
+              content: msg.content,
+              senderId: msg.senderId,
+              createdAt: msg.createdAt,
+            };
+          }
+        } catch (error) {
+          console.error(`Error fetching last message for conversation ${conversation.id}:`, error);
+        }
+
         return {
           ...conversation,
           participants: participants.filter(p => p !== null),
           otherUser,
+          lastMessage,
         };
       })
     );
