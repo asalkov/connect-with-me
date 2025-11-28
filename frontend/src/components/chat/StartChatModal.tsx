@@ -11,6 +11,8 @@ import {
   Button,
   List,
   Alert,
+  CircularProgress,
+  Divider,
 } from '@mui/material';
 import { Close as CloseIcon, Search as SearchIcon } from '@mui/icons-material';
 import { User as ApiUser } from '../../types/user';
@@ -40,17 +42,23 @@ export const StartChatModal = ({
   const renderSearchResults = () => {
     if (searchQuery.trim() === '') {
       return (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          Enter a username or email to search for users
-        </Typography>
+        <Box sx={{ py: 4, textAlign: 'center' }}>
+          <SearchIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+          <Typography variant="body2" color="text.secondary">
+            Enter a username or email to search for users
+          </Typography>
+        </Box>
       );
     }
 
     if (isSearching) {
       return (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          Searching...
-        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+          <CircularProgress size={40} />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Searching...
+          </Typography>
+        </Box>
       );
     }
 
@@ -64,18 +72,28 @@ export const StartChatModal = ({
 
     if (searchResults.length === 0) {
       return (
-        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-          No users found matching "{searchQuery}"
-        </Typography>
+        <Box sx={{ py: 4, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            No users found matching "{searchQuery}"
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            Try searching with a different username or email
+          </Typography>
+        </Box>
       );
     }
 
     return (
-      <List>
-        {searchResults.map((user) => (
-          <UserSearchItem key={user.id} user={user} onClick={onUserSelect} />
-        ))}
-      </List>
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ px: 2, py: 1, display: 'block' }}>
+          {searchResults.length} {searchResults.length === 1 ? 'user' : 'users'} found
+        </Typography>
+        <List sx={{ maxHeight: 300, overflowY: 'auto' }}>
+          {searchResults.map((user) => (
+            <UserSearchItem key={user.id} user={user} onClick={onUserSelect} />
+          ))}
+        </List>
+      </Box>
     );
   };
 

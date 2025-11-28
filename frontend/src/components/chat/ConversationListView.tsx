@@ -1,6 +1,7 @@
-import { Box, Typography, Button, List, ListItem, ListItemButton, ListItemAvatar, ListItemText, Avatar, Badge, InputBase, IconButton, Divider, CircularProgress } from '@mui/material';
+import { Box, Typography, Button, List, ListItem, ListItemButton, ListItemAvatar, ListItemText, Avatar, Badge, InputBase, IconButton, Divider } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { ConversationDisplay } from '../../hooks/useConversations';
+import { ConversationSkeleton } from './ConversationSkeleton';
 import { useState } from 'react';
 
 interface ConversationListViewProps {
@@ -59,9 +60,7 @@ export const ConversationListView = ({
       {/* Conversation List */}
       <Box sx={{ flex: 1, overflowY: 'auto' }}>
         {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-            <CircularProgress />
-          </Box>
+          <ConversationSkeleton count={5} />
         ) : filteredConversations.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">

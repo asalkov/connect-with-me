@@ -1,6 +1,8 @@
-import { Box, Typography, IconButton, InputBase, Avatar, CircularProgress, Chip } from '@mui/material';
+import { Box, Typography, IconButton, InputBase, Avatar } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Send as SendIcon, MoreVert as MoreVertIcon, EmojiEmotions as EmojiIcon, AttachFile as AttachFileIcon, Mic as MicIcon } from '@mui/icons-material';
 import { MessageBubble } from './MessageBubble';
+import { MessageSkeleton } from './MessageSkeleton';
+import { TypingIndicator } from './TypingIndicator';
 import { MessageDisplay } from '../../hooks/useMessages';
 import { ConversationDisplay } from '../../hooks/useConversations';
 import { useMediaQuery, useTheme } from '@mui/material';
@@ -11,6 +13,7 @@ interface MessageViewProps {
   messageText: string;
   isLoadingMessages: boolean;
   isSendingMessage: boolean;
+  isTyping?: boolean;
   onBack: () => void;
   onMessageChange: (text: string) => void;
   onSendMessage: () => void;
@@ -22,6 +25,7 @@ export const MessageView = ({
   messageText,
   isLoadingMessages,
   isSendingMessage,
+  isTyping = false,
   onBack,
   onMessageChange,
   onSendMessage,
@@ -82,9 +86,7 @@ export const MessageView = ({
         }}
       >
         {isLoadingMessages ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <CircularProgress />
-          </Box>
+          <MessageSkeleton count={8} />
         ) : messages.length === 0 ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', gap: 2 }}>
             <Typography variant="h6" color="text.secondary">
@@ -95,14 +97,17 @@ export const MessageView = ({
             </Typography>
           </Box>
         ) : (
-          messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              content={message.content}
-              timestamp={message.timestamp}
-              isOwn={message.isOwn}
-            />
-          ))
+          <>
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                content={message.content}
+                timestamp={message.timestamp}
+                isOwn={message.isOwn}
+              />
+            ))}
+            {isTyping && <TypingIndicator userName={conversation.userName} />}
+          </>
         )}
       </Box>
 
