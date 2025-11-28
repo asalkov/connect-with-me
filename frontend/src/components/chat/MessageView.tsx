@@ -3,6 +3,7 @@ import { ArrowBack as ArrowBackIcon, Send as SendIcon, MoreVert as MoreVertIcon,
 import { MessageBubble } from './MessageBubble';
 import { MessageSkeleton } from './MessageSkeleton';
 import { TypingIndicator } from './TypingIndicator';
+import { UnreadDivider } from './UnreadDivider';
 import { MessageDisplay } from '../../hooks/useMessages';
 import { ConversationDisplay } from '../../hooks/useConversations';
 import { useMediaQuery, useTheme } from '@mui/material';
@@ -14,6 +15,8 @@ interface MessageViewProps {
   isLoadingMessages: boolean;
   isSendingMessage: boolean;
   isTyping?: boolean;
+  firstUnreadIndex?: number;
+  unreadCount?: number;
   onBack: () => void;
   onMessageChange: (text: string) => void;
   onSendMessage: () => void;
@@ -26,6 +29,8 @@ export const MessageView = ({
   isLoadingMessages,
   isSendingMessage,
   isTyping = false,
+  firstUnreadIndex,
+  unreadCount = 0,
   onBack,
   onMessageChange,
   onSendMessage,
@@ -98,14 +103,19 @@ export const MessageView = ({
           </Box>
         ) : (
           <>
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                content={message.content}
-                timestamp={message.timestamp}
-                isOwn={message.isOwn}
-                status={message.status}
-              />
+            {messages.map((message, index) => (
+              <Box key={message.id}>
+                {/* Show unread divider before first unread message */}
+                {firstUnreadIndex !== undefined && index === firstUnreadIndex && (
+                  <UnreadDivider count={unreadCount} />
+                )}
+                <MessageBubble
+                  content={message.content}
+                  timestamp={message.timestamp}
+                  isOwn={message.isOwn}
+                  status={message.status}
+                />
+              </Box>
             ))}
             {isTyping && <TypingIndicator userName={conversation.userName} />}
           </>

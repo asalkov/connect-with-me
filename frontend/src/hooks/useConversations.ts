@@ -8,7 +8,7 @@ export interface ConversationDisplay {
   userInitials: string;
   lastMessage: string;
   timestamp: string;
-  unread?: boolean;
+  unreadCount?: number;
   participantIds: string[];
 }
 
@@ -42,6 +42,7 @@ export const useConversations = (currentUserId?: string) => {
           userInitials,
           lastMessage: conv.lastMessage?.content || 'No messages yet',
           timestamp: new Date(conv.lastMessageAt || conv.createdAt).toLocaleDateString(),
+          unreadCount: 0, // TODO: Get from backend
           participantIds: conv.participants.map(p => p.id),
         };
       });

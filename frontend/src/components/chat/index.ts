@@ -11,3 +11,4 @@ export { TypingIndicator } from './TypingIndicator';
 export { ConversationSkeleton } from './ConversationSkeleton';
 export { MessageSkeleton } from './MessageSkeleton';
 export { ImagePreviewModal } from './ImagePreviewModal';
+export { UnreadDivider } from './UnreadDivider';
