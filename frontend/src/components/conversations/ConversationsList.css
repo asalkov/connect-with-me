@@ -1,0 +1,143 @@
+.conversations-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.conversations-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.conversations-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.new-conversation-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.new-conversation-btn:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+}
+
+.new-conversation-btn:active {
+  transform: scale(0.95);
+}
+
+.conversations-items {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.conversations-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.conversations-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.conversations-items::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.conversations-items::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.conversations-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.conversations-loading p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.no-conversations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.no-conversations svg {
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+
+.no-conversations-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.no-conversations-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .conversations-header {
+    padding: 1rem;
+  }
+
+  .conversations-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .new-conversation-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
